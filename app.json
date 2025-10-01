@@ -26,7 +26,14 @@
       [
         "@rnmapbox/maps",
         {
-          "RNMapboxMapsDownloadToken": "pk.eyJ1Ijoid2FiZW5nYSIsImEiOiJjbHYyZDZycWMwODZzMmtudWVvdXFxY2xyIn0.cysmLEbhoPU_7w9YZP7b6w"
+          "RNMapboxMapsDownloadToken": "sk.VOTRE_SECRET_TOKEN",
+          "RNMapboxMapsVersion": "11.0.0"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Show current location on map."
         }
       ]
     ],
