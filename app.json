@@ -7,12 +7,16 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.ericsson.transportburundi"
     },
     "web": {
       "bundler": "metro",
@@ -24,13 +28,6 @@
       "expo-font",
       "expo-web-browser",
       [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsDownloadToken": "sk.VOTRE_SECRET_TOKEN",
-          "RNMapboxMapsVersion": "11.0.0"
-        }
-      ],
-      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Show current location on map."
@@ -39,6 +36,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c43f96de-1471-4bbd-9381-c234fa16bb14"
+      }
     }
   }
 }
