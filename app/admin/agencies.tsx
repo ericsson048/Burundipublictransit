@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, Plus, Building2, Trash2, Edit } from 'lucide-react-native';
+import { ArrowLeft, Plus, Building2, Trash2, CreditCard as Edit } from 'lucide-react-native';
 
 type Agency = {
   id: string;
