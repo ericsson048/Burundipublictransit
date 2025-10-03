@@ -1,4 +1,4 @@
-import react, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, MapPin, Bus, Building2 } from 'lucide-react-native';
+import { Search, MapPin, Bus, Building2, Shield } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function HomeScreen() {
+  const { user, isAdmin } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [popularRoutes, setPopularRoutes] = useState<any[]>([]);
@@ -70,10 +72,32 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
-          <Text style={styles.title}>Transport Burundi</Text>
-          <Text style={styles.subtitle}>
-            Trouvez votre itinéraire facilement
-          </Text>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.title}>Transport Burundi</Text>
+              <Text style={styles.subtitle}>
+                Trouvez votre itinéraire facilement
+              </Text>
+            </View>
+            {user && (
+              <TouchableOpacity
+                style={styles.adminButton}
+                onPress={() =>
+                  isAdmin
+                    ? router.push('/admin')
+                    : router.push('/auth/login')
+                }>
+                <Shield size={20} color={isAdmin ? '#2563EB' : '#6B7280'} />
+              </TouchableOpacity>
+            )}
+            {!user && (
+              <TouchableOpacity
+                style={styles.loginButton}
+                onPress={() => router.push('/auth/login')}>
+                <Text style={styles.loginButtonText}>Admin</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <View style={styles.searchContainer}>
@@ -180,6 +204,30 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     paddingTop: 10,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  adminButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#2563EB',
+  },
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   title: {
     fontSize: 28,
