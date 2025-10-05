@@ -58,12 +58,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    return { error };
-  };
+     const user = data?.user ?? null;
+
+  let isAdmin = false;
+  if (user) {
+    // Vérifie si l'utilisateur est admin dans ta table 'admins'
+    const { data: adminData, error: adminError } = await supabase
+      .from('admins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    isAdmin = !!adminData && !adminError;
+  }
+
+  return { error, user, isAdmin };
+};
 
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({

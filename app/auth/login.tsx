@@ -30,15 +30,17 @@ export default function LoginScreen() {
     setLoading(true);
     setError('');
 
-    const { error: signInError } = await signIn(email, password);
+   const { error: signInError, user, isAdmin } = await signIn(email, password);
 
-    if (signInError) {
-      setError('Email ou mot de passe incorrect');
-      setLoading(false);
-    } else {
-      router.replace('/(tabs)');
-    }
-  };
+  if (signInError || !user) {
+    setError('Email ou mot de passe incorrect');
+    setLoading(false);
+  } else if (isAdmin) {
+    router.replace('./admin/dashboard'); 
+  } else {
+    router.replace('/(tabs)');
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>
