@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -16,7 +17,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Plus, Bus, Trash2, CreditCard as Edit } from 'lucide-react-native';
 import { Picker } from '@react-native-picker/picker';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 
 type BusLine = {
@@ -47,6 +47,7 @@ export default function ManageBusLines() {
     zones: '',
     color: '#2563EB',
     city_id: '',
+    price: '500',
     stops: [] as { name: string; lat: number; lng: number }[],
     route_coordinates: { type: 'LineString', coordinates: [] as [number, number][] },
   });
@@ -93,6 +94,7 @@ export default function ManageBusLines() {
         zones: line.zones_covered.join(', '),
         color: line.color,
         city_id: line.city_id,
+        price: String(line.price || 500),
         stops: line.stops ?? [],
         route_coordinates: line.route_coordinates ?? { type: 'LineString', coordinates: [] },
       });
@@ -105,6 +107,7 @@ export default function ManageBusLines() {
         zones: '',
         color: '#2563EB',
         city_id: cities[0]?.id ?? '',
+        price: '500',
         stops: [],
         route_coordinates: { type: 'LineString', coordinates: [] },
       });
@@ -120,6 +123,7 @@ export default function ManageBusLines() {
       zones: '',
       color: '#2563EB',
       city_id: cities[0]?.id ?? '',
+      price: '500',
       stops: [],
       route_coordinates: { type: 'LineString', coordinates: [] },
     });
@@ -145,6 +149,7 @@ export default function ManageBusLines() {
             city_id: formData.city_id,
             zones_covered: zones,
             color: formData.color,
+            price: parseInt(formData.price) || 500,
             stops: formData.stops,
             route_coordinates: formData.route_coordinates,
           })
@@ -157,6 +162,7 @@ export default function ManageBusLines() {
           city_id: formData.city_id,
           zones_covered: zones,
           color: formData.color,
+          price: parseInt(formData.price) || 500,
           stops: formData.stops,
           route_coordinates: formData.route_coordinates,
           active: true,
@@ -228,6 +234,9 @@ export default function ManageBusLines() {
                     <Text style={styles.lineZones}>
                       {cities.find((c) => c.id === line.city_id)?.name ?? 'Ville non définie'}
                     </Text>
+                    <Text style={styles.linePrice}>
+                      {line.price ? `${line.price} FBU` : 'Prix non défini'}
+                    </Text>
                   </View>
                 </View>
                 <View style={styles.lineActions}>
@@ -283,26 +292,32 @@ export default function ManageBusLines() {
         onChangeText={(text) => setFormData({ ...formData, zones: text })}
       />
 
+      {/* Prix */}
+      <Text style={styles.label}>Prix du trajet (FBU)</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Prix en Francs Burundais"
+        value={formData.price}
+        onChangeText={(text) => setFormData({ ...formData, price: text })}
+        keyboardType="numeric"
+      />
+
       {/* Mini carte pour dessiner le tracé */}
-      <Text style={styles.label}>Tracer la ligne sur la carte</Text>
-      <MapView
-        style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 12 }}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={{
-          latitude: routeCoordinates[0]?.latitude || -3.3869, // Bujumbura par défaut
-          longitude: routeCoordinates[0]?.longitude || 29.3644,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
-        onPress={(e) => setRouteCoordinates([...routeCoordinates, e.nativeEvent.coordinate])}
-      >
-        {routeCoordinates.map((coord, index) => (
-          <Marker key={index} coordinate={coord} />
-        ))}
-        {routeCoordinates.length > 1 && (
-          <Polyline coordinates={routeCoordinates} strokeColor={formData.color} strokeWidth={3} />
-        )}
-      </MapView>
+      {Platform.OS !== 'web' ? (
+        <>
+          <Text style={styles.label}>Tracer la ligne sur la carte</Text>
+          <Text style={styles.webWarning}>
+            La carte interactive n'est pas disponible sur web. Utilisez l'application mobile pour tracer les lignes.
+          </Text>
+        </>
+      ) : (
+        <>
+          <Text style={styles.label}>Tracer la ligne sur la carte</Text>
+          <Text style={styles.webWarning}>
+            La carte interactive n'est pas disponible sur web. Utilisez l'application mobile pour tracer les lignes.
+          </Text>
+        </>
+      )}
 
       {/* Boutons modal */}
       <View style={styles.modalButtons}>
@@ -346,6 +361,7 @@ const styles = StyleSheet.create({
   lineInfo: { flex: 1 },
   lineName: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 4 },
   lineZones: { fontSize: 14, color: '#6B7280' },
+  linePrice: { fontSize: 14, color: '#059669', fontWeight: '600', marginTop: 2 },
   lineActions: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
   statusText: { fontSize: 14, fontWeight: '500' },
   activeText: { color: '#059669' },
@@ -371,6 +387,7 @@ const styles = StyleSheet.create({
   stopInput: { flex: 1, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, padding: 8 },
   addStopButton: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   addStopText: { color: '#2563EB', fontWeight: '500' },
+  webWarning: { fontSize: 13, color: '#DC2626', fontStyle: 'italic', marginBottom: 12, padding: 8, backgroundColor: '#FEF2F2', borderRadius: 6 },
 
   modalButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
   modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },

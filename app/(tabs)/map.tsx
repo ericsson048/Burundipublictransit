@@ -5,12 +5,28 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
+  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import SuperCluster from 'supercluster';
 import { supabase } from '@/lib/supabase';
 import { useLocalSearchParams } from 'expo-router';
+import { MapPin, DollarSign } from 'lucide-react-native';
+
+let MapView: any;
+let Marker: any;
+let Polyline: any;
+let PROVIDER_GOOGLE: any;
+let Callout: any;
+
+if (Platform.OS !== 'web') {
+  const maps = require('react-native-maps');
+  MapView = maps.default;
+  Marker = maps.Marker;
+  Polyline = maps.Polyline;
+  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+  Callout = maps.Callout;
+}
 
 export const BUJUMBURA_CENTER = {
   latitude: -3.3731,
@@ -20,7 +36,8 @@ export const BUJUMBURA_CENTER = {
 export default function MapScreen() {
   const [busLines, setBusLines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const mapRef = useRef<MapView>(null);
+  const [selectedLine, setSelectedLine] = useState<any>(null);
+  const mapRef = useRef<any>(null);
   const params = useLocalSearchParams();
 
   useEffect(() => {
@@ -125,7 +142,17 @@ export default function MapScreen() {
                         longitude: stop.coordinates[0],
                       }}
                       pinColor={line.color || '#2563EB'}
-                    />
+                      onPress={() => setSelectedLine(line)}
+                    >
+                      <Callout>
+                        <View style={styles.callout}>
+                          <Text style={styles.calloutTitle}>{line.name}</Text>
+                          <Text style={styles.calloutText}>
+                            Prix: {line.price || 500} FBU
+                          </Text>
+                        </View>
+                      </Callout>
+                    </Marker>
                   ))
                 : null
             )}
@@ -133,22 +160,68 @@ export default function MapScreen() {
         )}
       </View>
 
-      <View style={styles.legend}>
-        <Text style={styles.legendTitle}>Lignes de bus</Text>
-        {busLines.slice(0, 5).map((line) => (
-          <View key={line.id} style={styles.legendItem}>
-            <View
-              style={[
-                styles.legendColor,
-                { backgroundColor: line.color || '#2563EB' },
-              ]}
-            />
-            <Text style={styles.legendText} numberOfLines={1}>
-              {line.name}
+      {selectedLine ? (
+        <View style={styles.infoCard}>
+          <View style={styles.infoHeader}>
+            <View>
+              <Text style={styles.infoTitle}>{selectedLine.name}</Text>
+              <Text style={styles.infoSubtitle}>
+                {selectedLine.zones_covered?.join(' • ')}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setSelectedLine(null)}>
+              <Text style={styles.closeButton}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.priceContainer}>
+            <DollarSign size={20} color="#059669" />
+            <Text style={styles.priceText}>
+              {selectedLine.price || 500} FBU
             </Text>
           </View>
-        ))}
-      </View>
+          {selectedLine.stops && selectedLine.stops.length > 0 && (
+            <View style={styles.stopsContainer}>
+              <Text style={styles.stopsTitle}>Arrêts</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {selectedLine.stops.map((stop: any, idx: number) => (
+                  <View key={idx} style={styles.stopChip}>
+                    <MapPin size={12} color="#6B7280" />
+                    <Text style={styles.stopText}>{stop.name}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      ) : (
+        <View style={styles.legend}>
+          <Text style={styles.legendTitle}>Lignes de bus</Text>
+          <ScrollView style={styles.legendScroll}>
+            {busLines.map((line) => (
+              <TouchableOpacity
+                key={line.id}
+                style={styles.legendItem}
+                onPress={() => setSelectedLine(line)}
+              >
+                <View
+                  style={[
+                    styles.legendColor,
+                    { backgroundColor: line.color || '#2563EB' },
+                  ]}
+                />
+                <View style={styles.legendInfo}>
+                  <Text style={styles.legendText} numberOfLines={1}>
+                    {line.name}
+                  </Text>
+                  <Text style={styles.legendPrice}>
+                    {line.price || 500} FBU
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -179,7 +252,39 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   legendTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 12 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  legendScroll: { maxHeight: 150 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingRight: 8 },
   legendColor: { width: 20, height: 4, borderRadius: 2, marginRight: 8 },
-  legendText: { flex: 1, fontSize: 14, color: '#6B7280' },
+  legendInfo: { flex: 1 },
+  legendText: { fontSize: 14, color: '#111827', fontWeight: '500' },
+  legendPrice: { fontSize: 12, color: '#059669', marginTop: 2 },
+  callout: { padding: 8, minWidth: 150 },
+  calloutTitle: { fontSize: 14, fontWeight: '600', color: '#111827', marginBottom: 4 },
+  calloutText: { fontSize: 12, color: '#6B7280' },
+  infoCard: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  infoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  infoTitle: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  infoSubtitle: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  closeButton: { fontSize: 20, color: '#6B7280', padding: 4 },
+  priceContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#F0FDF4', borderRadius: 8 },
+  priceText: { fontSize: 18, fontWeight: '700', color: '#059669', marginLeft: 8 },
+  stopsContainer: { marginTop: 8 },
+  stopsTitle: { fontSize: 14, fontWeight: '600', color: '#111827', marginBottom: 8 },
+  stopChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, marginRight: 8 },
+  stopText: { fontSize: 12, color: '#6B7280', marginLeft: 4 },
 });
